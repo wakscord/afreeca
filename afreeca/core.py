@@ -5,6 +5,8 @@ from typing import Awaitable, Callable, Optional
 import orjson
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 
+from afreeca.credential import Credential
+
 from .constants import CHAT_URL, FLAG, RETURN_CODE, ServiceCode
 from .exceptions import NotStreamingError
 from .interfaces import BJInfo, Chat
@@ -13,44 +15,22 @@ from .utils import Flag
 
 
 class AfreecaTV:
-    def __init__(self):
-        self._session: Optional[ClientSession] = None
-        self._pdbox_ticket: Optional[str] = None
+    def __init__(self, credential: Credential):
+        self.credential = credential
 
-        self._headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    async def get_bj_info(self, bj_id: str) -> BJInfo:
+        return await self.fetch_bj_info(self.credential, bj_id)
 
-    @property
-    def session(self) -> ClientSession:
-        if self._session is None:
-            self._session = ClientSession()
+    async def create_chat(self, bj_id: str) -> "AfreecaChat":
+        return AfreecaChat(bj_id, self.credential)
 
-        return self._session
-
-    async def login(self, id: str, pw: str) -> bool:
-        response = await self.session.post(
-            "https://login.afreecatv.com/app/LoginAction.php",
-            data=f"szUid={id}&szPassword={pw}&szWork=login",
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-
-        cookies = {key: value.value for key, value in response.cookies.items()}
-
-        self._pdbox_ticket = cookies.get("PdboxTicket")
-        self._headers["Cookie"] = "; ".join(
-            [f"{key}={value}" for key, value in cookies.items()]
-        )
-
-        return bool(self._pdbox_ticket)
-
-    def logout(self):
-        self._pdbox_ticket = None
-        self._headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
-    async def fetch_bj_info(self, bj_id: str) -> BJInfo:
-        response = await self.session.post(
+    @staticmethod
+    async def fetch_bj_info(credential: Credential, bj_id: str) -> BJInfo:
+        session = await credential.get_session()
+        response = await session.post(
             f"https://live.afreecatv.com/afreeca/player_live_api.php",
             data=f"bid={bj_id}&type=live&player_type=html5",
-            headers=self._headers,
+            headers=credential.headers,
         )
 
         data = await response.text()
@@ -73,16 +53,12 @@ class AfreecaTV:
             ftk=data["CHANNEL"]["FTK"],
         )
 
-    async def create_chat(self, bj_id: str) -> "AfreecaChat":
-        info = await self.fetch_bj_info(bj_id)
-
-        return AfreecaChat(info, self._pdbox_ticket)
-
 
 class AfreecaChat:
-    def __init__(self, info: BJInfo, pdbox_ticket: Optional[str] = None):
-        self.info = info
-        self.pdbox_ticket = pdbox_ticket
+    def __init__(self, bj_id: str, credential: Credential):
+        self.bj_id = bj_id
+        self.credential = credential
+        self.info: Optional[BJInfo] = None
 
         self.session: Optional[ClientSession] = None
         self.connection: Optional[ClientWebSocketResponse] = None
@@ -118,13 +94,16 @@ class AfreecaChat:
                 print_exc()
 
     async def connect(self):
+        if not self.info:
+            self.info = await AfreecaTV.fetch_bj_info(self.credential, self.bj_id)
+
         self.session = ClientSession()
         self.connection = await self.session.ws_connect(self.info.chat_url)
 
         await self._send(
             ServiceCode.SVC_LOGIN,
             [
-                self.pdbox_ticket if self.pdbox_ticket else "",
+                self.credential.pdbox_ticket if self.credential.pdbox_ticket else "",
                 "",
                 Flag().add(FLAG["GUEST"]).flag1,
             ],
@@ -134,7 +113,6 @@ class AfreecaChat:
             self.keepalive_task = asyncio.create_task(self._keepalive())
 
     async def _send(self, svc: ServiceCode, data: list):
-        print(create_packet(svc, data))
         await self.connection.send_bytes(create_packet(svc, data))
 
     async def _keepalive(self):
