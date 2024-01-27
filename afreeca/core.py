@@ -5,9 +5,8 @@ from typing import Awaitable, Callable, Optional
 import orjson
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 
-from afreeca.credential import Credential
-
 from .constants import CHAT_URL, FLAG, RETURN_CODE, ServiceCode
+from .credential import Credential
 from .exceptions import NotStreamingError
 from .interfaces import BJInfo, Chat
 from .packet import create_packet
@@ -69,6 +68,9 @@ class AfreecaChat:
 
     def add_callback(self, callback: Callable[[Chat], Awaitable]):
         self.callbacks.append(callback)
+
+    def remove_callback(self, callback: Callable[[Chat], Awaitable]):
+        self.callbacks.remove(callback)
 
     async def start(self):
         await self.connect()

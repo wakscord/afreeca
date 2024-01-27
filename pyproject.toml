@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "afreeca"
+authors = [
+    { name = "minibox", email = "minibox724@gmail.com" },
+]
+description = "AfreecaTV API Wrapper"
+license = { text = "MIT" }
+dependencies = [
+    "aiohttp",
+    "orjson",
+]
+requires-python = ">=3.9"
+dynamic = ["version", "readme"]
+
+[project.urls]
+homepage = "https://github.com/wakscord/afreeca"
+repository = "https://github.com/wakscord/afreeca"
+
+[tool.setuptools.dynamic]
+version = { attr = "afreeca.__VERSION__" }
+readme = { file = ["README.md"], content-type = "text/markdown" }
+
+
