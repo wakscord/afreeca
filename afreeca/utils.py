@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from .constants import FLAG
 
 
-def get_color(raw_color):
+def get_color(raw_color: Optional[str]) -> Optional[str]:
     if not raw_color or not raw_color.isdigit() or int(raw_color) == 0:
         return None
 
@@ -9,7 +13,7 @@ def get_color(raw_color):
     return f"#{c[4:6]}{c[2:4]}{c[0:2]}"
 
 
-def get_flags(flag1, flag2):
+def get_flags(flag1: str, flag2: str) -> list[str]:
     flags = []
 
     for flag, data in FLAG.items():
@@ -23,19 +27,19 @@ def get_flags(flag1, flag2):
 
 
 class Flag:
-    def __init__(self):
+    def __init__(self) -> None:
         self._flag1 = 0
         self._flag2 = 0
 
     @property
-    def flag1(self):
+    def flag1(self) -> str:
         return str(self._flag1)
 
     @property
-    def flag2(self):
+    def flag2(self) -> str:
         return str(self._flag2)
 
-    def add(self, flag):
+    def add(self, flag: dict[str, int]) -> Flag:
         value, where = flag["value"], flag["where"]
 
         if where == 1:
@@ -45,7 +49,7 @@ class Flag:
 
         return self
 
-    def sub(self, flag):
+    def sub(self, flag: dict[str, int]) -> Flag:
         value, where = flag["value"], flag["where"]
 
         if where == 1:
