@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Optional
 
 from .constants import FLAG
-
-if TYPE_CHECKING:
-    from typing import Optional
 
 
 def get_color(raw_color: Optional[str]) -> Optional[str]:

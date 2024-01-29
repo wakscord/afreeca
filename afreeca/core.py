@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from traceback import print_exc
-from typing import TYPE_CHECKING, cast
+from typing import Callable, Coroutine, Optional, cast
 
 import orjson
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
@@ -15,10 +15,7 @@ from .packet import create_packet
 from .types.bj_info import BJInfo as BJInfoDict
 from .utils import Flag
 
-if TYPE_CHECKING:
-    from typing import Callable, Coroutine, Optional
-
-    Callback = Coroutine[None, None, None]
+Callback = Coroutine[None, None, None]
 
 
 class AfreecaTV:

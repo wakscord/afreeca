@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Optional
 
+from .types.packet import ChatPacket
 from .utils import get_color, get_flags
-
-if TYPE_CHECKING:
-    from typing import Optional
-
-    from .types.packet import ChatPacket
 
 
 @dataclass
