@@ -1,7 +1,14 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from .utils import get_color, get_flags
+
+if TYPE_CHECKING:
+    from typing import Optional
+
+    from .types.packet import ChatPacket
 
 
 @dataclass
@@ -27,7 +34,7 @@ class Chat:
     subscription_month: Optional[int]
     flags: list[str]
 
-    def __init__(self, packet: list):
+    def __init__(self, packet: list[str]) -> None:
         data = self._parse_packet(packet)["data"]
 
         self.sender_id = data["senderID"]
@@ -37,7 +44,7 @@ class Chat:
         self.subscription_month = data["subscription_month"]
         self.flags = data["flags"]
 
-    def _parse_packet(self, packet: list):
+    def _parse_packet(self, packet: list[str]) -> ChatPacket:
         message = packet[0].replace("\r", "")
         senderID = packet[1]
         permission = int(packet[3])
@@ -71,3 +78,5 @@ class Chat:
                     "flags": get_flags(flag1, flag2),
                 },
             }
+
+        return {"cmd": "unknown", "data": {}}

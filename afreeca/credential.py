@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 
 from aiohttp import ClientSession
@@ -10,7 +12,7 @@ class Credential:
     pdbox_ticket: Optional[str] = None
     _session: Optional[ClientSession] = None
 
-    async def get_session(self) -> "ClientSession":
+    async def get_session(self) -> ClientSession:
         if self._session is None:
             self._session = ClientSession()
 
@@ -25,7 +27,7 @@ class GuestCredential(Credential):
 
 class UserCredential(Credential):
     @classmethod
-    async def login(cls, id: str, pw: str) -> "UserCredential":
+    async def login(cls, id: str, pw: str) -> UserCredential:
         credential = cls()
 
         session = await credential.get_session()
@@ -45,6 +47,3 @@ class UserCredential(Credential):
         )
 
         return credential
-
-
-GuestCredential()

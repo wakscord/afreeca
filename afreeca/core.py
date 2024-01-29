@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from traceback import print_exc
-from typing import Awaitable, Callable, Optional
+from typing import TYPE_CHECKING, cast
 
 import orjson
 from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
@@ -10,17 +12,23 @@ from .credential import Credential
 from .exceptions import NotStreamingError
 from .interfaces import BJInfo, Chat
 from .packet import create_packet
+from .types.bj_info import BJInfo as BJInfoDict
 from .utils import Flag
+
+if TYPE_CHECKING:
+    from typing import Callable, Coroutine, Optional
+
+    Callback = Coroutine[None, None, None]
 
 
 class AfreecaTV:
-    def __init__(self, credential: Credential):
+    def __init__(self, credential: Credential) -> None:
         self.credential = credential
 
     async def get_bj_info(self, bj_id: str) -> BJInfo:
         return await self.fetch_bj_info(self.credential, bj_id)
 
-    async def create_chat(self, bj_id: str) -> "AfreecaChat":
+    async def create_chat(self, bj_id: str) -> AfreecaChat:
         return AfreecaChat(bj_id, self.credential)
 
     @staticmethod
@@ -32,8 +40,9 @@ class AfreecaTV:
             headers=credential.headers,
         )
 
-        data = await response.text()
-        data = orjson.loads(data)
+        raw_data = await response.text()
+        data = orjson.loads(raw_data)
+        data = cast(BJInfoDict, data)
 
         if data["CHANNEL"]["RESULT"] != 1:
             raise NotStreamingError(bj_id)
@@ -62,20 +71,20 @@ class AfreecaChat:
         self.session: Optional[ClientSession] = None
         self.connection: Optional[ClientWebSocketResponse] = None
 
-        self.callbacks: list[Callable[[Chat], Awaitable]] = []
+        self.callbacks: list[Callable[[Chat], Callback]] = []
 
-        self.keepalive_task: Optional[asyncio.Task] = None
+        self.keepalive_task: Optional[asyncio.Task[None]] = None
 
-    def add_callback(self, callback: Callable[[Chat], Awaitable]):
+    def add_callback(self, callback: Callable[[Chat], Callback]) -> None:
         self.callbacks.append(callback)
 
-    def remove_callback(self, callback: Callable[[Chat], Awaitable]):
+    def remove_callback(self, callback: Callable[[Chat], Callback]) -> None:
         self.callbacks.remove(callback)
 
-    async def start(self):
+    async def start(self) -> None:
         await self.connect()
 
-        while True:
+        while self.connection is not None:
             try:
                 if self.connection.closed:
                     await self.connect()
@@ -95,7 +104,7 @@ class AfreecaChat:
             except:
                 print_exc()
 
-    async def connect(self):
+    async def connect(self) -> None:
         if not self.info:
             self.info = await AfreecaTV.fetch_bj_info(self.credential, self.bj_id)
 
@@ -114,10 +123,11 @@ class AfreecaChat:
         if not self.keepalive_task:
             self.keepalive_task = asyncio.create_task(self._keepalive())
 
-    async def _send(self, svc: ServiceCode, data: list):
-        await self.connection.send_bytes(create_packet(svc, data))
+    async def _send(self, svc: int, data: list[str]) -> None:
+        if self.connection is not None:
+            await self.connection.send_bytes(create_packet(svc, data))
 
-    async def _keepalive(self):
+    async def _keepalive(self) -> None:
         while True:
             try:
                 await self._send(ServiceCode.SVC_KEEPALIVE, [])
@@ -126,7 +136,7 @@ class AfreecaChat:
 
             await asyncio.sleep(20)
 
-    async def _process_message(self, msg: WSMessage):
+    async def _process_message(self, msg: WSMessage) -> None:
         if msg.type != WSMsgType.BINARY:
             return
 
@@ -142,7 +152,7 @@ class AfreecaChat:
 
             return
 
-        if svc == ServiceCode.SVC_LOGIN:
+        if svc == ServiceCode.SVC_LOGIN and self.info is not None:
             await self._send(
                 ServiceCode.SVC_JOINCH,
                 [

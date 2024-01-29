@@ -12,6 +12,7 @@ license = { text = "MIT" }
 dependencies = [
     "aiohttp",
     "orjson",
+    "typing_extensions"
 ]
 requires-python = ">=3.9"
 dynamic = ["version", "readme"]
@@ -21,7 +22,7 @@ homepage = "https://github.com/wakscord/afreeca"
 repository = "https://github.com/wakscord/afreeca"
 
 [tool.setuptools.dynamic]
-version = { attr = "afreeca.__VERSION__" }
+version = { attr = "afreeca.__version__" }
 readme = { file = ["README.md"], content-type = "text/markdown" }
 
 
