@@ -9,3 +9,8 @@ class NotStreamingError(Exception):
 class LoginError(Exception):
     def __str__(self) -> str:
         return "로그인에 실패했습니다."
+
+
+class PasswordError(Exception):
+    def __str__(self) -> str:
+        return "비밀번호가 일치하지 않습니다."

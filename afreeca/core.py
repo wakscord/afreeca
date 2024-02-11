@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from traceback import print_exc
 from typing import Callable, Coroutine, Optional, cast
 
 import orjson
@@ -9,11 +8,11 @@ from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 
 from .constants import CHAT_URL, FLAG, RETURN_CODE, ServiceCode
 from .credential import Credential
-from .exceptions import NotStreamingError
+from .exceptions import NotStreamingError, PasswordError
 from .interfaces import BJInfo, Chat
 from .packet import create_packet
 from .types.bj_info import BJInfo as BJInfoDict
-from .utils import Flag
+from .utils import Flag, callback
 
 Callback = Coroutine[None, None, None]
 
@@ -68,38 +67,49 @@ class AfreecaChat:
         self.session: Optional[ClientSession] = None
         self.connection: Optional[ClientWebSocketResponse] = None
 
-        self.callbacks: list[Callable[[Chat], Callback]] = []
+        self.callbacks: dict[str, list[Callable[[Chat], Callback]]] = {}
+        self.process_callbacks: dict[
+            int, list[Callable[[AfreecaChat, list[str]], None]]
+        ] = {}
 
         self.keepalive_task: Optional[asyncio.Task[None]] = None
 
-    def add_callback(self, callback: Callable[[Chat], Callback]) -> None:
-        self.callbacks.append(callback)
+        self.room_password: Optional[str] = None
+
+    def add_callback(self, event: str, callback: Callable[[Chat], Callback]) -> None:
+        if self.callbacks.get(event) is None:
+            self.callbacks[event] = []
+
+        self.callbacks[event].append(callback)
 
     def remove_callback(self, callback: Callable[[Chat], Callback]) -> None:
-        self.callbacks.remove(callback)
+        for event, callbacks in self.callbacks.items():
+            if callback in callbacks:
+                self.callbacks[event].remove(callback)
+
+    def set_password(self, password: str) -> None:
+        self.room_password = password
+
+    async def loop(self) -> None:
+        while self.connection is not None:
+            if self.connection.closed:
+                await self.connect()
+                return
+
+            try:
+                msg = await self.connection.receive(timeout=10)
+
+                if msg.type == WSMsgType.CLOSED:
+                    await self.connect()
+                    continue
+
+                await self._process_message(msg)
+            except asyncio.TimeoutError:
+                continue
 
     async def start(self) -> None:
         await self.connect()
-
-        while self.connection is not None:
-            try:
-                if self.connection.closed:
-                    await self.connect()
-                    return
-
-                try:
-                    msg = await self.connection.receive(timeout=10)
-
-                    if msg.type == WSMsgType.CLOSED:
-                        await self.connect()
-                        continue
-
-                    await self._process_message(msg)
-                except asyncio.TimeoutError:
-                    print("timeout")
-                    continue
-            except:
-                print_exc()
+        await self.loop()
 
     async def connect(self) -> None:
         if not self.info:
@@ -108,7 +118,7 @@ class AfreecaChat:
         self.session = ClientSession()
         self.connection = await self.session.ws_connect(self.info.chat_url)
 
-        await self._send(
+        await self.send(
             ServiceCode.SVC_LOGIN,
             [
                 self.credential.pdbox_ticket if self.credential.pdbox_ticket else "",
@@ -120,14 +130,14 @@ class AfreecaChat:
         if not self.keepalive_task:
             self.keepalive_task = asyncio.create_task(self._keepalive())
 
-    async def _send(self, svc: int, data: list[str]) -> None:
+    async def send(self, svc: int, data: list[str]) -> None:
         if self.connection is not None:
             await self.connection.send_bytes(create_packet(svc, data))
 
     async def _keepalive(self) -> None:
         while True:
             try:
-                await self._send(ServiceCode.SVC_KEEPALIVE, [])
+                await self.send(ServiceCode.SVC_KEEPALIVE, [])
             except:
                 pass
 
@@ -143,6 +153,9 @@ class AfreecaChat:
         svc = int(header[2:6])
         ret_code = int(header[12:14])
 
+        if ret_code == RETURN_CODE["PASSWORD_ERROR"]:
+            raise PasswordError()
+
         if ret_code > RETURN_CODE["SUCCESS"]:
             reversed_ret_code = {v: k for k, v in RETURN_CODE.items()}
             print(f"not success ret_code: {reversed_ret_code[ret_code]}")
@@ -150,21 +163,38 @@ class AfreecaChat:
             return
 
         if svc == ServiceCode.SVC_LOGIN and self.info is not None:
-            await self._send(
-                ServiceCode.SVC_JOINCH,
-                [
-                    self.info.chatno,
-                    self.info.ftk,
-                    "0",
-                    "",
-                    "log&set_bps=8000&view_bps=1000&quality=normal&geo_cc=KR&geo_rc=11&acpt_lang=ko_KR&svc_lang=ko_KRpwdauth_infoNULLpver2access_systemhtml5",
-                ],
-            )
+            content = [
+                self.info.chatno,
+                self.info.ftk,
+                "0",
+                "",
+                "",
+            ]
 
-        packet = body.decode("utf-8").strip().split("\f")
+            if self.room_password:
+                content[4] = f"pwd\x11{self.room_password}"
 
-        if svc == ServiceCode.SVC_CHATMESG:
-            chat = Chat(packet)
+            await self.send(ServiceCode.SVC_JOINCH, content)
 
-            for callback in self.callbacks:
-                asyncio.create_task(callback(chat))
+        packet: list[str] = body.decode("utf-8").strip().split("\f")
+
+        with open("packet.log", "a", encoding="utf8") as f:
+            f.write(f"{svc} {packet}\n")
+
+        for name in self.__dir__():
+            if name.startswith("_process_"):
+                func = getattr(self, name)
+
+                if callable(func) and hasattr(func, "svc"):
+                    if func.svc == svc:
+                        await func(packet)
+
+        for callback in self.callbacks.get("all", []):
+            asyncio.create_task(callback(packet))
+
+    @callback(ServiceCode.SVC_CHATMESG)
+    async def _process_chat(self, packet: list[str]) -> None:
+        chat = Chat(packet)
+
+        for callback in self.callbacks.get("chat", []):
+            asyncio.create_task(callback(chat))

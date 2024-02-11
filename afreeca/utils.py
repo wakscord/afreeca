@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from .constants import FLAG
+from .constants import FLAG, ServiceCode
+
+if TYPE_CHECKING:
+    from .core import AfreecaChat
 
 
 def get_color(raw_color: Optional[str]) -> Optional[str]:
@@ -58,3 +61,12 @@ class Flag:
             self._flag2 &= ~value
 
         return self
+
+
+def callback(svc: int):
+    def decorator(func):
+        func.svc = svc
+
+        return func
+
+    return decorator
