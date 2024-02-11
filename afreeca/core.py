@@ -31,7 +31,7 @@ class AfreecaTV:
     async def fetch_bj_info(credential: Credential, bj_id: str) -> BJInfo:
         session = await credential.get_session()
         response = await session.post(
-            f"https://live.afreecatv.com/afreeca/player_live_api.php",
+            f"https://live.afreecatv.com/afreeca/player_live_api.php?bjid={bj_id}",
             data=f"bid={bj_id}&type=live&player_type=html5",
             headers=credential.headers,
         )
@@ -55,6 +55,7 @@ class AfreecaTV:
             ),
             chatno=data["CHANNEL"]["CHATNO"],
             ftk=data["CHANNEL"]["FTK"],
+            tk=data["CHANNEL"]["TK"],
         )
 
 
@@ -121,7 +122,7 @@ class AfreecaChat:
         await self.send(
             ServiceCode.SVC_LOGIN,
             [
-                self.credential.pdbox_ticket if self.credential.pdbox_ticket else "",
+                self.info.tk if self.info.tk else "",
                 "",
                 Flag().add(FLAG["GUEST"]).flag1,
             ],
@@ -190,7 +191,7 @@ class AfreecaChat:
                         await func(packet)
 
         for callback in self.callbacks.get("all", []):
-            asyncio.create_task(callback(packet))
+            asyncio.create_task(callback(svc, packet))
 
     @callback(ServiceCode.SVC_CHATMESG)
     async def _process_chat(self, packet: list[str]) -> None:

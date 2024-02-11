@@ -18,6 +18,7 @@ class BJInfo:
     chat_url: str
     chatno: str
     ftk: str
+    tk: Optional[str]
 
 
 @dataclass

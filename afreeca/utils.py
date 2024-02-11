@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
-from .constants import FLAG, ServiceCode
-
-if TYPE_CHECKING:
-    from .core import AfreecaChat
+from .constants import FLAG
 
 
 def get_color(raw_color: Optional[str]) -> Optional[str]:

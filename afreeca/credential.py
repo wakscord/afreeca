@@ -10,6 +10,7 @@ from .exceptions import LoginError
 class Credential:
     headers: dict[str, str] = {"Content-Type": "application/x-www-form-urlencoded"}
     pdbox_ticket: Optional[str] = None
+    au: Optional[str] = None
     _session: Optional[ClientSession] = None
 
     async def get_session(self) -> ClientSession:
@@ -21,8 +22,7 @@ class Credential:
         return self._session
 
 
-class GuestCredential(Credential):
-    ...
+class GuestCredential(Credential): ...
 
 
 class UserCredential(Credential):
@@ -42,6 +42,7 @@ class UserCredential(Credential):
             raise LoginError()
 
         credential.pdbox_ticket = cookies.get("PdboxTicket")
+        credential.au = cookies.get("_au")
         credential.headers["Cookie"] = "; ".join(
             [f"{key}={value}" for key, value in cookies.items()]
         )
