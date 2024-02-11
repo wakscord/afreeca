@@ -55,7 +55,7 @@ class AfreecaTV:
             ),
             chatno=data["CHANNEL"]["CHATNO"],
             ftk=data["CHANNEL"]["FTK"],
-            tk=data["CHANNEL"]["TK"],
+            tk=data["CHANNEL"]["TK"] if "TK" in data["CHANNEL"] else None,
         )
 
 
