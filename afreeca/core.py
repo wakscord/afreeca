@@ -179,9 +179,6 @@ class AfreecaChat:
 
         packet: list[str] = body.decode("utf-8").strip().split("\f")
 
-        with open("packet.log", "a", encoding="utf8") as f:
-            f.write(f"{svc} {packet}\n")
-
         for name in self.__dir__():
             if name.startswith("_process_"):
                 func = getattr(self, name)
