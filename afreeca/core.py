@@ -9,7 +9,7 @@ from aiohttp import ClientSession, ClientWebSocketResponse, WSMessage, WSMsgType
 from .constants import CHAT_URL, FLAG, RETURN_CODE, ServiceCode
 from .credential import Credential
 from .exceptions import NotStreamingError, PasswordError
-from .interfaces import BJInfo, Chat
+from .interfaces import BJInfo, BroadcastInfo, Chat
 from .packet import create_packet
 from .types.bj_info import BJInfo as BJInfoDict
 from .utils import Flag, callback
@@ -23,6 +23,9 @@ class AfreecaTV:
 
     async def get_bj_info(self, bj_id: str) -> BJInfo:
         return await self.fetch_bj_info(self.credential, bj_id)
+
+    async def get_broadcast_info(self, bj_id: str) -> BroadcastInfo | None:
+        return await self.fetch_broadcast_info(self.credential, bj_id)
 
     async def create_chat(self, bj_id: str) -> AfreecaChat:
         return AfreecaChat(bj_id, self.credential)
@@ -56,6 +59,29 @@ class AfreecaTV:
             chatno=data["CHANNEL"]["CHATNO"],
             ftk=data["CHANNEL"]["FTK"],
             tk=data["CHANNEL"]["TK"] if "TK" in data["CHANNEL"] else None,
+        )
+
+    @staticmethod
+    async def fetch_broadcast_info(
+        credential: Credential, bj_id: str
+    ) -> BroadcastInfo | None:
+        session = await credential.get_session()
+        response = await session.get(
+            f"https://bjapi.afreecatv.com/api/{bj_id}/station",
+            headers=credential.headers,
+        )
+
+        raw_data = await response.text()
+        data = orjson.loads(raw_data)
+
+        if "broad" not in data:
+            return None
+
+        return BroadcastInfo(
+            bno=data["broad"]["broad_no"],
+            title=data["broad"]["broad_title"],
+            viewer=data["broad"]["current_sum_viewer"],
+            is_password=data["broad"]["is_password"],
         )
 
 

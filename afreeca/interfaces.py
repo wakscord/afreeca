@@ -8,6 +8,14 @@ from .utils import get_color, get_flags
 
 
 @dataclass
+class BroadcastInfo:
+    bno: int
+    title: str
+    viewer: int
+    is_password: bool
+
+
+@dataclass
 class BJInfo:
     bj_id: str
     bj_nick: str

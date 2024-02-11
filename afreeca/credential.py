@@ -8,7 +8,10 @@ from .exceptions import LoginError
 
 
 class Credential:
-    headers: dict[str, str] = {"Content-Type": "application/x-www-form-urlencoded"}
+    headers: dict[str, str] = {
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
     pdbox_ticket: Optional[str] = None
     au: Optional[str] = None
     _session: Optional[ClientSession] = None
