@@ -28,6 +28,8 @@ class BJInfo:
     ftk: str
     tk: Optional[str]
 
+    pcon: dict[int, str]
+
 
 @dataclass
 class Chat:

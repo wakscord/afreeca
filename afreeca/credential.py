@@ -51,3 +51,12 @@ class UserCredential(Credential):
         )
 
         return credential
+
+    async def logout(self) -> None:
+        session = await self.get_session()
+
+        await session.get("https://login.afreecatv.com/app/LogOut.php")
+
+        await session.close()
+
+        self._session = None

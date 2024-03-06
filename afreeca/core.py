@@ -59,6 +59,9 @@ class AfreecaTV:
             chatno=data["CHANNEL"]["CHATNO"],
             ftk=data["CHANNEL"]["FTK"],
             tk=data["CHANNEL"]["TK"] if "TK" in data["CHANNEL"] else None,
+            pcon={
+                obj["MONTH"]: obj["FILENAME"] for obj in data["CHANNEL"]["PCON_OBJECT"]
+            },
         )
 
     @staticmethod
