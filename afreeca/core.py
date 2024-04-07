@@ -141,7 +141,7 @@ class AfreecaChat:
         await self.connect()
         await self.loop()
 
-    async def connect(self) -> None:
+    async def connect(self, sub: bool = False) -> None:
         if not self.info:
             self.info = await AfreecaTV.fetch_bj_info(self.credential, self.bj_id)
 
@@ -153,7 +153,7 @@ class AfreecaChat:
             [
                 self.info.tk if self.info.tk else "",
                 "",
-                Flag().add(FLAG["GUEST"]).flag1,
+                Flag().add(FLAG["FOLLOWER" if sub else "GUEST"]).flag1,
             ],
         )
 
