@@ -1,4 +1,4 @@
-CHAT_URL = "wss://{chdomain}:{chpt}/Websocket/{bj_id}"
+CHAT_URL = "ws://{chdomain}:{chpt}/Websocket/{bj_id}"
 
 
 class ServiceCode:
@@ -157,9 +157,7 @@ RETURN_CODE = {
     "ERR_62_LIVECHAT_ERR_TRANS_ABUSE": 62,
     "ERR_64_LIVECHAT_ERR_TRANS_AUTH_SHARE": 64,
     "ERR_67_LIVECHAT_ERR_OGQPENALTY": 67,
-
-    
-    "PASSWORD_ERROR": 57, # 왜 아프리카 클라 const에 없는거지?
+    "PASSWORD_ERROR": 57,  # 왜 아프리카 클라 const에 없는거지?
 }
 
 

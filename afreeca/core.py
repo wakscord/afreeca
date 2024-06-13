@@ -53,7 +53,7 @@ class AfreecaTV:
             title=data["CHANNEL"]["TITLE"],
             chat_url=CHAT_URL.format(
                 chdomain=data["CHANNEL"]["CHDOMAIN"],
-                chpt=int(data["CHANNEL"]["CHPT"]) + 1,
+                chpt=int(data["CHANNEL"]["CHPT"]),  # wss 프로토콜 사용시 +1
                 bj_id=bj_id,
             ),
             chatno=data["CHANNEL"]["CHATNO"],
