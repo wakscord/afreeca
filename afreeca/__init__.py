@@ -14,4 +14,4 @@ __all__ = [
     "PasswordError",
 ]
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"

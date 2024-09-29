@@ -221,6 +221,9 @@ class AfreecaChat:
 
     @callback(ServiceCode.SVC_CHATMESG)
     async def _process_chat(self, packet: list[str]) -> None:
+        if len(packet) != 10:
+            return
+
         chat = Chat(packet)
 
         for callback in self.callbacks.get("chat", []):
