@@ -62,6 +62,7 @@ class AfreecaTV:
             pcon={
                 obj["MONTH"]: obj["FILENAME"] for obj in data["CHANNEL"]["PCON_OBJECT"]
             },
+            bpwd=data["CHANNEL"]["BPWD"] == "Y",
         )
 
     @staticmethod

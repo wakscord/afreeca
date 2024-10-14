@@ -29,6 +29,7 @@ class BJInfo:
     tk: Optional[str]
 
     pcon: dict[int, str]
+    bpwd: bool
 
 
 @dataclass
