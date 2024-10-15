@@ -207,6 +207,8 @@ class AfreecaChat:
 
             await self.send(ServiceCode.SVC_JOINCH, content)
 
+        packet: list[str] = []
+
         try:
             packet = body.decode("utf-8").strip().split("\f")
         except UnicodeDecodeError:
