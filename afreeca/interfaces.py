@@ -13,6 +13,7 @@ class BroadcastInfo:
     title: str
     viewer: int
     is_password: bool
+    is_subscription: bool
 
 
 @dataclass

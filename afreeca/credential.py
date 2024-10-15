@@ -35,13 +35,13 @@ class UserCredential(Credential):
 
         session = await credential.get_session()
         response = await session.post(
-            "https://login.afreecatv.com/app/LoginAction.php",
+            "https://login.sooplive.co.kr/app/LoginAction.php",
             data=f"szUid={id}&szPassword={pw}&szWork=login",
         )
 
         cookies = {key: value.value for key, value in response.cookies.items()}
 
-        if not cookies.get("PdboxTicket"):
+        if not cookies.get("AuthTicket"):
             raise LoginError()
 
         credential.pdbox_ticket = cookies.get("PdboxTicket")
@@ -55,7 +55,7 @@ class UserCredential(Credential):
     async def logout(self) -> None:
         session = await self.get_session()
 
-        await session.get("https://login.afreecatv.com/app/LogOut.php")
+        await session.get("https://login.sooplive.co.kr/app/LogOut.php")
 
         await session.close()
 

@@ -34,7 +34,7 @@ class AfreecaTV:
     async def fetch_bj_info(credential: Credential, bj_id: str) -> BJInfo:
         session = await credential.get_session()
         response = await session.post(
-            f"https://live.afreecatv.com/afreeca/player_live_api.php?bjid={bj_id}",
+            f"https://live.sooplive.co.kr/afreeca/player_live_api.php?bjid={bj_id}",
             data=f"bid={bj_id}&type=live&player_type=html5",
             headers=credential.headers,
         )
@@ -71,7 +71,7 @@ class AfreecaTV:
     ) -> BroadcastInfo | None:
         session = await credential.get_session()
         response = await session.get(
-            f"https://bjapi.afreecatv.com/api/{bj_id}/station",
+            f"https://chapi.sooplive.co.kr/api/{bj_id}/station",
             headers=credential.headers,
         )
 
@@ -207,7 +207,10 @@ class AfreecaChat:
 
             await self.send(ServiceCode.SVC_JOINCH, content)
 
-        packet: list[str] = body.decode("utf-8").strip().split("\f")
+        try:
+            packet: list[str] = body.decode("utf-8").strip().split("\f")
+        except UnicodeDecodeError:
+            packet: list[str] = body.split()
 
         for name in self.__dir__():
             if name.startswith("_process_"):
