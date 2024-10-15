@@ -208,9 +208,15 @@ class AfreecaChat:
             await self.send(ServiceCode.SVC_JOINCH, content)
 
         try:
-            packet: list[str] = body.decode("utf-8").strip().split("\f")
+            packet = body.decode("utf-8").strip().split("\f")
         except UnicodeDecodeError:
-            packet: list[str] = body.split()
+            packet_raw: list[bytes] = body.split()
+
+            for packet_part in packet_raw:
+                try:
+                    packet.append(packet_part.decode("utf-8"))
+                except UnicodeDecodeError:
+                    packet.append(packet_part.decode("euc-kr"))
 
         for name in self.__dir__():
             if name.startswith("_process_"):
