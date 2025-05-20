@@ -232,8 +232,6 @@ class AfreecaChat:
                 except UnicodeDecodeError:
                     packet.append(packet_part.decode("euc-kr"))
 
-        print(f"svc: {svc}, packet: {packet}")
-
         for name in self.__dir__():
             if name.startswith("_process_"):
                 func = getattr(self, name)
