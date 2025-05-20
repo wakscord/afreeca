@@ -46,6 +46,14 @@ class AfreecaTV:
         if data["CHANNEL"]["RESULT"] != 1:
             raise NotStreamingError(bj_id)
 
+        pcon = {}
+
+        if data["CHANNEL"].get("PCON_OBJECT"):
+            pcon = {
+                obj["MONTH"]: obj["FILENAME"]
+                for obj in data["CHANNEL"]["PCON_OBJECT"]["tier1"]
+            }
+
         return BJInfo(
             bj_id=bj_id,
             bj_nick=data["CHANNEL"]["BJNICK"],
@@ -59,9 +67,7 @@ class AfreecaTV:
             chatno=data["CHANNEL"]["CHATNO"],
             ftk=data["CHANNEL"]["FTK"],
             tk=data["CHANNEL"]["TK"] if "TK" in data["CHANNEL"] else None,
-            pcon={
-                obj["MONTH"]: obj["FILENAME"] for obj in data["CHANNEL"]["PCON_OBJECT"]
-            },
+            pcon=pcon,
             bpwd=data["CHANNEL"]["BPWD"] == "Y",
         )
 
