@@ -48,10 +48,16 @@ class AfreecaTV:
 
         pcon = {}
 
-        if data["CHANNEL"].get("PCON_OBJECT"):
+        pcon_object = data["CHANNEL"].get("PCON_OBJECT")
+
+        if isinstance(pcon_object, dict):
             pcon = {
                 obj["MONTH"]: obj["FILENAME"]
                 for obj in data["CHANNEL"]["PCON_OBJECT"]["tier1"]
+            }
+        elif isinstance(pcon_object, list):
+            pcon = {
+                obj["MONTH"]: obj["FILENAME"] for obj in data["CHANNEL"]["PCON_OBJECT"]
             }
 
         return BJInfo(
@@ -225,6 +231,8 @@ class AfreecaChat:
                     packet.append(packet_part.decode("utf-8"))
                 except UnicodeDecodeError:
                     packet.append(packet_part.decode("euc-kr"))
+
+        print(f"svc: {svc}, packet: {packet}")
 
         for name in self.__dir__():
             if name.startswith("_process_"):
